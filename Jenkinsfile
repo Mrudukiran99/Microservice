@@ -10,7 +10,7 @@ pipeline {
 
         stage('Verify Deployment') {
             steps {
-                sh "kubectl get svc -n webapps"
+                sh "kubectl get svc -n default"
             }
         }
     }
