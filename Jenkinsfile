@@ -6,7 +6,7 @@ pipeline {
       steps {
         withKubeCredentials(kubectlCredentials: [[
           caCertificate: '',
-          clusterName: 'EKS-1',
+          clusterName: 'EKS',
           contextName: '',
           credentialsId: 'k8-token',
           namespace: 'webapps',
@@ -21,7 +21,7 @@ pipeline {
       steps {
         withKubeCredentials(kubectlCredentials: [[
           caCertificate: '',
-          clusterName: 'EKS-1',
+          clusterName: 'EKS',
           contextName: '',
           credentialsId: 'k8-token',
           namespace: 'webapps',
