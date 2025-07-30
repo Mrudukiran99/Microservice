@@ -1,7 +1,35 @@
 pipeline {
   agent any
 
+  environment {
+    DOCKER_IMAGE = "mrudukiran/frontend:latest"
+    DOCKER_CREDENTIALS_ID = 'docker-hub-creds'  // Replace with your Jenkins Docker credentials ID
+  }
+
   stages {
+    stage('Build Docker Image') {
+      steps {
+        script {
+          docker.build("${DOCKER_IMAGE}")
+        }
+      }
+    }
+
+    stage('Push Docker Image') {
+      steps {
+        withCredentials([usernamePassword(
+          credentialsId: "${DOCKER_CREDENTIALS_ID}",
+          passwordVariable: 'DOCKER_PASSWORD',
+          usernameVariable: 'DOCKER_USERNAME'
+        )]) {
+          sh """
+            echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+            docker push ${DOCKER_IMAGE}
+          """
+        }
+      }
+    }
+
     stage('Deploy To Kubernetes') {
       steps {
         withKubeCredentials(kubectlCredentials: [[
@@ -17,7 +45,7 @@ pipeline {
       }
     }
 
-    stage('verify Deployment') {
+    stage('Verify Deployment') {
       steps {
         withKubeCredentials(kubectlCredentials: [[
           caCertificate: '',
