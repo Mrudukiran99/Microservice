@@ -442,10 +442,10 @@ kind: Deployment
 metadata:
   name: loadgenerator
 spec:
+  replicas: 1
   selector:
     matchLabels:
       app: loadgenerator
-  replicas: 1
   template:
     metadata:
       labels:
@@ -455,7 +455,6 @@ spec:
     spec:
       serviceAccountName: default
       terminationGracePeriodSeconds: 5
-      restartPolicy: Always
       containers:
       - name: main
         securityContext:

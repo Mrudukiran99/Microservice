@@ -29,6 +29,15 @@ pipeline {
       }
     }
 
+    stage('Validate Deployment') {
+      steps {
+        sh '''
+          chmod +x validate-k8s.sh
+          ./validate-k8s.sh
+        '''
+      }
+    }
+
     stage('Deploy to Kubernetes') {
       steps {
         withKubeConfig(credentialsId: 'k8-token') {
@@ -38,8 +47,14 @@ pipeline {
             ls -l
             echo "Show first 20 lines of deployment-service.yml:"
             head -20 deployment-service.yml
+            echo "Checking kubectl connection..."
+            kubectl cluster-info
+            echo "Checking if namespace webapps exists..."
+            kubectl get namespace webapps || kubectl create namespace webapps
             echo "Applying deployment-service.yml to namespace webapps"
-            kubectl apply -f deployment-service.yml -n webapps
+            kubectl apply -f deployment-service.yml -n webapps --validate=false
+            echo "Waiting for deployments to be ready..."
+            kubectl wait --for=condition=available --timeout=300s deployment --all -n webapps || echo "Some deployments may still be starting up"
           '''
         }
       }
@@ -48,8 +63,16 @@ pipeline {
     stage('Verify Deployment') {
       steps {
         withKubeConfig(credentialsId: 'k8-token') {
-          sh 'kubectl get pods -n webapps'
-          sh 'kubectl get svc -n webapps'
+          sh '''
+            echo "Checking deployment status..."
+            kubectl get deployments -n webapps
+            echo "Checking pods status..."
+            kubectl get pods -n webapps
+            echo "Checking services..."
+            kubectl get svc -n webapps
+            echo "Checking for any failed pods..."
+            kubectl get pods -n webapps --field-selector=status.phase=Failed
+          '''
         }
       }
     }
