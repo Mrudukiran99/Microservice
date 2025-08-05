@@ -16,7 +16,7 @@ pipeline {
       steps {
         script {
           def services = ['adservice', 'checkoutservice', 'currencyservice', 'cartservice', 'emailservice', 'frontend', 'paymentservice', 'productcatalogservice', 'recommendationservice', 'shippingservice', 'loadgenerator']
-          
+
           for (service in services) {
             echo "Building and pushing image for ${service}"
             sh """
@@ -33,26 +33,23 @@ pipeline {
       steps {
         withKubeConfig(credentialsId: 'k8-token') {
           sh '''
-            echo "---- deployment-service.yml content ----"
-            cat deployment-service.yml
-            echo "---------------------------------------"
+            echo "Current directory: $(pwd)"
+            echo "List files in workspace:"
+            ls -l
+            echo "Show first 20 lines of deployment-service.yml:"
+            head -20 deployment-service.yml
+            echo "Applying deployment-service.yml to namespace webapps"
             kubectl apply -f deployment-service.yml -n webapps --validate=false
           '''
         }
       }
     }
 
-    stage('Deploy to Kubernetes') {
-  steps {
-    withKubeConfig(credentialsId: 'k8-token') {
-      sh '''
-        echo "PWD: $(pwd)"
-        echo "List files:"
-        ls -l
-        echo "Show deployment-service.yml first 20 lines:"
-        head -20 deployment-service.yml
-        kubectl apply -f deployment-service.yml -n webapps --validate=false
-      '''
+    stage('Verify Deployment') {
+      steps {
+        withKubeConfig(credentialsId: 'k8-token') {
+          sh 'kubectl get pods -n webapps'
+          sh 'kubectl get svc -n webapps'
         }
       }
     }
