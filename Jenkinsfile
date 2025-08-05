@@ -32,7 +32,7 @@ pipeline {
     stage('Deploy to Kubernetes') {
       steps {
         withKubeConfig(credentialsId: 'k8-token') {
-          sh 'kubectl apply -f deployment-service.yml -n webapps'
+          sh 'kubectl apply -f deployment-service.yml -n webapps --validate=false'
         }
       }
     }
