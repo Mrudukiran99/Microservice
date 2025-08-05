@@ -3,42 +3,27 @@ pipeline {
 
   environment {
     DOCKER_REGISTRY = "mrudukiran"
-    K8S_NAMESPACE = "webapps"
   }
 
   stages {
     stage('Checkout Code') {
       steps {
-        git url: 'https://github.com/Mrudukiran99/Microservice.git', branch: 'main', credentialsId: 'git-cred'
+        git url: 'https://github.com/Mrudukiran99/Microservice.git', credentialsId: 'git-cred', branch: 'main'
       }
     }
 
     stage('Build and Push Images') {
       steps {
         script {
-          // List of microservices (folder names + main js filename)
-          def services = [
-            'adservice',
-            'checkoutservice',
-            'currencyservice',
-            'cartservice',
-            'emailservice',
-            'frontend',
-            'paymentservice',
-            'productcatalogservice',
-            'recommendationservice',
-            'shippingservice'
-          ]
-
+          def services = ['adservice', 'checkoutservice', 'currencyservice', 'cartservice', 'emailservice', 'frontend', 'paymentservice', 'productcatalogservice', 'recommendationservice', 'shippingservice', 'loadgenerator']
+          
           for (service in services) {
-            dir(service) {
-              // Update Dockerfile CMD to run correct js file
-              sh """
-                sed -i 's/^CMD.*/CMD ["node", "${service}.js"]/' Dockerfile
-                docker build --no-cache -t ${DOCKER_REGISTRY}/${service}:latest .
-                docker push ${DOCKER_REGISTRY}/${service}:latest
-              """
-            }
+            echo "Building and pushing image for ${service}"
+            sh """
+              sed -i 's/^CMD.*/CMD ["node", "${service}.js"]/' Dockerfile
+              docker build -t ${DOCKER_REGISTRY}/${service}:latest .
+              docker push ${DOCKER_REGISTRY}/${service}:latest
+            """
           }
         }
       }
@@ -46,32 +31,18 @@ pipeline {
 
     stage('Deploy to Kubernetes') {
       steps {
-        // Apply Kubernetes manifests and rollout restart deployments
-        sh "kubectl apply -f deployment-service.yml -n ${K8S_NAMESPACE}"
-
-        script {
-          def services = [
-            'adservice',
-            'checkoutservice',
-            'currencyservice',
-            'cartservice',
-            'emailservice',
-            'frontend',
-            'paymentservice',
-            'productcatalogservice',
-            'recommendationservice',
-            'shippingservice'
-          ]
-          for (service in services) {
-            sh "kubectl rollout restart deployment ${service} -n ${K8S_NAMESPACE}"
-          }
+        withKubeConfig(credentialsId: 'kubeconfig-cred') {
+          sh 'kubectl apply -f deployment-service.yml -n webapps'
         }
       }
     }
 
     stage('Verify Deployment') {
       steps {
-        sh "kubectl get pods -n ${K8S_NAMESPACE}"
+        withKubeConfig(credentialsId: 'kubeconfig-cred') {
+          sh 'kubectl get pods -n webapps'
+          sh 'kubectl get svc -n webapps'
+        }
       }
     }
   }
