@@ -1,11 +1,23 @@
 {
-  "name": "adservice",
+  "name": "microservice",
   "version": "1.0.0",
-  "main": "adservice.js",
+  "description": "Microservice project with multiple services",
   "scripts": {
-    "start": "node adservice.js"
+    "start:adservice": "node adservice.js",
+    "start:cartservice": "node cartservice.js",
+    "start:checkoutservice": "node checkoutservice.js",
+    "start:currencyservice": "node currencyservice.js",
+    "start:emailservice": "node emailservice.js",
+    "start:frontend": "node frontend.js",
+    "start:loadgenerator": "node loadgenerator.js",
+    "start:paymentservice": "node paymentservice.js",
+    "start:productcatalogservice": "node productcatalogservice.js",
+    "start:recommendationservice": "node recommendationservice.js",
+    "start:shippingservice": "node shippingservice.js"
   },
   "dependencies": {
     "express": "^4.18.2"
-  }
+  },
+  "author": "Mrudukiran99",
+  "license": "ISC"
 }
