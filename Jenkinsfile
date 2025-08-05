@@ -3,11 +3,11 @@ pipeline {
 
   environment {
     DOCKER_IMAGE = "mrudukiran/frontend:latest"
-    DOCKER_CREDENTIALS_ID = 'docker-cred'  // Jenkins Docker Hub credentials ID
-    K8S_CREDENTIALS_ID = 'k8-token'       // Jenkins Kubernetes token credentials ID
+    DOCKER_CREDENTIALS_ID = 'docker-cred'    // Jenkins Docker Hub credentials ID
+    K8S_CREDENTIALS_ID = 'k8-token'          // Jenkins Kubernetes token credentials ID
     K8S_CLUSTER_NAME = 'EKS-1'
     K8S_NAMESPACE = 'webapps'
-    K8S_API_SERVER = 'https://555ADC334545656A0F62A84D584110B5.gr7.us-east-1.eks.amazonaws.com'
+    K8S_API_SERVER = 'https://23629F13C75C82CA785319980AAF7F24.gr7.us-east-1.eks.amazonaws.com'
   }
 
   stages {
@@ -28,7 +28,7 @@ pipeline {
     stage('Push Docker Image') {
       steps {
         withCredentials([usernamePassword(
-          credentialsId: 'docker-cred',
+          credentialsId: "${DOCKER_CREDENTIALS_ID}",
           usernameVariable: 'DOCKER_USERNAME',
           passwordVariable: 'DOCKER_PASSWORD'
         )]) {
