@@ -12,38 +12,26 @@ spec:
       labels:
         app: emailservice
     spec:
-      serviceAccountName: default
-      terminationGracePeriodSeconds: 5
-      securityContext:
-        fsGroup: 1000
-        runAsGroup: 1000
-        runAsNonRoot: true
-        runAsUser: 1000
       containers:
       - name: server
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-              - ALL
-          privileged: false
-          readOnlyRootFilesystem: true
         image: mrudukiran/emailservice:latest
         ports:
         - containerPort: 8080
+        readinessProbe:
+          exec:
+            command: ["/bin/grpc_health_probe", "-addr=:8080"]
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        livenessProbe:
+          exec:
+            command: ["/bin/grpc_health_probe", "-addr=:8080"]
+          initialDelaySeconds: 10
+          periodSeconds: 10
         env:
         - name: PORT
           value: "8080"
         - name: DISABLE_PROFILER
           value: "1"
-        readinessProbe:
-          periodSeconds: 5
-          exec:
-            command: ["/bin/grpc_health_probe", "-addr=:8080"]
-        livenessProbe:
-          periodSeconds: 5
-          exec:
-            command: ["/bin/grpc_health_probe", "-addr=:8080"]
         resources:
           requests:
             cpu: 100m
@@ -78,40 +66,43 @@ spec:
       labels:
         app: checkoutservice
     spec:
-      serviceAccountName: default
       containers:
-        - name: server
-          image: mrudukiran/checkoutservice:latest
-          ports:
-          - containerPort: 5050
-          readinessProbe:
-            exec:
-              command: ["/bin/grpc_health_probe", "-addr=:5050"]
-          livenessProbe:
-            exec:
-              command: ["/bin/grpc_health_probe", "-addr=:5050"]
-          env:
-          - name: PORT
-            value: "5050"
-          - name: PRODUCT_CATALOG_SERVICE_ADDR
-            value: "productcatalogservice:3550"
-          - name: SHIPPING_SERVICE_ADDR
-            value: "shippingservice:50051"
-          - name: PAYMENT_SERVICE_ADDR
-            value: "paymentservice:50051"
-          - name: EMAIL_SERVICE_ADDR
-            value: "emailservice:5000"
-          - name: CURRENCY_SERVICE_ADDR
-            value: "currencyservice:7000"
-          - name: CART_SERVICE_ADDR
-            value: "cartservice:7070"
-          resources:
-            requests:
-              cpu: 100m
-              memory: 64Mi
-            limits:
-              cpu: 200m
-              memory: 128Mi
+      - name: server
+        image: mrudukiran/checkoutservice:latest
+        ports:
+        - containerPort: 5050
+        readinessProbe:
+          exec:
+            command: ["/bin/grpc_health_probe", "-addr=:5050"]
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        livenessProbe:
+          exec:
+            command: ["/bin/grpc_health_probe", "-addr=:5050"]
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        env:
+        - name: PORT
+          value: "5050"
+        - name: PRODUCT_CATALOG_SERVICE_ADDR
+          value: "productcatalogservice:3550"
+        - name: SHIPPING_SERVICE_ADDR
+          value: "shippingservice:50051"
+        - name: PAYMENT_SERVICE_ADDR
+          value: "paymentservice:50051"
+        - name: EMAIL_SERVICE_ADDR
+          value: "emailservice:5000"
+        - name: CURRENCY_SERVICE_ADDR
+          value: "currencyservice:7000"
+        - name: CART_SERVICE_ADDR
+          value: "cartservice:7070"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi
 ---
 apiVersion: v1
 kind: Service
@@ -139,21 +130,21 @@ spec:
       labels:
         app: recommendationservice
     spec:
-      serviceAccountName: default
-      terminationGracePeriodSeconds: 5
       containers:
       - name: server
         image: mrudukiran/recommendationservice:latest
         ports:
         - containerPort: 8080
         readinessProbe:
-          periodSeconds: 5
           exec:
             command: ["/bin/grpc_health_probe", "-addr=:8080"]
+          initialDelaySeconds: 5
+          periodSeconds: 5
         livenessProbe:
-          periodSeconds: 5
           exec:
             command: ["/bin/grpc_health_probe", "-addr=:8080"]
+          initialDelaySeconds: 10
+          periodSeconds: 10
         env:
         - name: PORT
           value: "8080"
@@ -197,54 +188,55 @@ spec:
       annotations:
         sidecar.istio.io/rewriteAppHTTPProbers: "true"
     spec:
-      serviceAccountName: default
       containers:
-        - name: server
-          image: mrudukiran/frontend:latest
-          ports:
-          - containerPort: 8080
-          readinessProbe:
-            initialDelaySeconds: 10
-            httpGet:
-              path: "/_healthz"
-              port: 8080
-              httpHeaders:
-              - name: "Cookie"
-                value: "shop_session-id=x-readiness-probe"
-          livenessProbe:
-            initialDelaySeconds: 10
-            httpGet:
-              path: "/_healthz"
-              port: 8080
-              httpHeaders:
-              - name: "Cookie"
-                value: "shop_session-id=x-liveness-probe"
-          env:
-          - name: PORT
-            value: "8080"
-          - name: PRODUCT_CATALOG_SERVICE_ADDR
-            value: "productcatalogservice:3550"
-          - name: CURRENCY_SERVICE_ADDR
-            value: "currencyservice:7000"
-          - name: CART_SERVICE_ADDR
-            value: "cartservice:7070"
-          - name: RECOMMENDATION_SERVICE_ADDR
-            value: "recommendationservice:8080"
-          - name: SHIPPING_SERVICE_ADDR
-            value: "shippingservice:50051"
-          - name: CHECKOUT_SERVICE_ADDR
-            value: "checkoutservice:5050"
-          - name: AD_SERVICE_ADDR
-            value: "adservice:9555"
-          - name: ENABLE_PROFILER
-            value: "0"
-          resources:
-            requests:
-              cpu: 100m
-              memory: 64Mi
-            limits:
-              cpu: 200m
-              memory: 128Mi
+      - name: server
+        image: mrudukiran/frontend:latest
+        ports:
+        - containerPort: 8080
+        readinessProbe:
+          httpGet:
+            path: "/_healthz"
+            port: 8080
+            httpHeaders:
+            - name: "Cookie"
+              value: "shop_session-id=x-readiness-probe"
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: "/_healthz"
+            port: 8080
+            httpHeaders:
+            - name: "Cookie"
+              value: "shop_session-id=x-liveness-probe"
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        env:
+        - name: PORT
+          value: "8080"
+        - name: PRODUCT_CATALOG_SERVICE_ADDR
+          value: "productcatalogservice:3550"
+        - name: CURRENCY_SERVICE_ADDR
+          value: "currencyservice:7000"
+        - name: CART_SERVICE_ADDR
+          value: "cartservice:7070"
+        - name: RECOMMENDATION_SERVICE_ADDR
+          value: "recommendationservice:8080"
+        - name: SHIPPING_SERVICE_ADDR
+          value: "shippingservice:50051"
+        - name: CHECKOUT_SERVICE_ADDR
+          value: "checkoutservice:5050"
+        - name: AD_SERVICE_ADDR
+          value: "adservice:9555"
+        - name: ENABLE_PROFILER
+          value: "0"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi
 ---
 apiVersion: v1
 kind: Service
