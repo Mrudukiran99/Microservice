@@ -1,13 +1,10 @@
 {
-  "name": "microservice",
+  "name": "adservice",
   "version": "1.0.0",
-  "description": "Microservice project",
-  "main": "index.js",
+  "main": "adservice.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node adservice.js"
   },
-  "author": "Mrudukiran99",
-  "license": "ISC",
   "dependencies": {
     "express": "^4.18.2"
   }
