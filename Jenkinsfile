@@ -42,11 +42,17 @@ pipeline {
       }
     }
 
-    stage('Verify Deployment') {
-      steps {
-        withKubeConfig(credentialsId: 'k8-token') {
-          sh 'kubectl get pods -n webapps'
-          sh 'kubectl get svc -n webapps'
+    stage('Deploy to Kubernetes') {
+  steps {
+    withKubeConfig(credentialsId: 'k8-token') {
+      sh '''
+        echo "PWD: $(pwd)"
+        echo "List files:"
+        ls -l
+        echo "Show deployment-service.yml first 20 lines:"
+        head -20 deployment-service.yml
+        kubectl apply -f deployment-service.yml -n webapps --validate=false
+      '''
         }
       }
     }
