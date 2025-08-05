@@ -8,8 +8,6 @@ pipeline {
   stage('Checkout Code') {
   steps {
     git url: 'https://github.com/Mrudukiran99/Microservice.git', credentialsId: 'git-cred', branch: 'main'
-    sh 'ls -l'
-    sh 'cat deployment-service.yml'
       }
     }
 
