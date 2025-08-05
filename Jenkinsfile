@@ -5,9 +5,10 @@ pipeline {
     DOCKER_REGISTRY = "mrudukiran"
   }
 
-  stage('Checkout Code') {
-  steps {
-    git url: 'https://github.com/Mrudukiran99/Microservice.git', credentialsId: 'git-cred', branch: 'main'
+  stages {
+    stage('Checkout Code') {
+      steps {
+        git url: 'https://github.com/Mrudukiran99/Microservice.git', credentialsId: 'git-cred', branch: 'main'
       }
     }
 
@@ -29,14 +30,14 @@ pipeline {
     }
 
     stage('Deploy to Kubernetes') {
-  steps {
-    withKubeConfig(credentialsId: 'k8-token') {
-      sh '''
-        echo "---- deployment-service.yml content ----"
-        cat deployment-service.yml
-        echo "---------------------------------------"
-        kubectl apply -f deployment-service.yml -n webapps --validate=false
-      '''
+      steps {
+        withKubeConfig(credentialsId: 'k8-token') {
+          sh '''
+            echo "---- deployment-service.yml content ----"
+            cat deployment-service.yml
+            echo "---------------------------------------"
+            kubectl apply -f deployment-service.yml -n webapps --validate=false
+          '''
         }
       }
     }
