@@ -39,7 +39,7 @@ pipeline {
             echo "Show first 20 lines of deployment-service.yml:"
             head -20 deployment-service.yml
             echo "Applying deployment-service.yml to namespace webapps"
-            kubectl apply -f deployment-service.yml -n webapps --validate=false
+            kubectl apply -f deployment-service.yml -n webapps
           '''
         }
       }
