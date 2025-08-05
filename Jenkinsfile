@@ -2,72 +2,76 @@ pipeline {
   agent any
 
   environment {
-    DOCKER_IMAGE = "mrudukiran/frontend:latest"
-    DOCKER_CREDENTIALS_ID = 'docker-cred'    // Jenkins Docker Hub credentials ID
-    K8S_CREDENTIALS_ID = 'k8-token'          // Jenkins Kubernetes token credentials ID
-    K8S_CLUSTER_NAME = 'EKS-1'
-    K8S_NAMESPACE = 'webapps'
-    K8S_API_SERVER = 'https://23629F13C75C82CA785319980AAF7F24.gr7.us-east-1.eks.amazonaws.com'
+    DOCKER_REGISTRY = "mrudukiran"
+    K8S_NAMESPACE = "webapps"
   }
 
   stages {
     stage('Checkout Code') {
       steps {
-        checkout scm
+        git url: 'https://github.com/Mrudukiran99/Microservice.git', branch: 'main', credentialsId: 'git-cred'
       }
     }
 
-    stage('Build Docker Image') {
+    stage('Build and Push Images') {
       steps {
         script {
-          docker.build("${DOCKER_IMAGE}")
-        }
-      }
-    }
+          // List of microservices (folder names + main js filename)
+          def services = [
+            'adservice',
+            'checkoutservice',
+            'currencyservice',
+            'cartservice',
+            'emailservice',
+            'frontend',
+            'paymentservice',
+            'productcatalogservice',
+            'recommendationservice',
+            'shippingservice'
+          ]
 
-    stage('Push Docker Image') {
-      steps {
-        withCredentials([usernamePassword(
-          credentialsId: "${DOCKER_CREDENTIALS_ID}",
-          usernameVariable: 'DOCKER_USERNAME',
-          passwordVariable: 'DOCKER_PASSWORD'
-        )]) {
-          sh '''
-            echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-            docker push ${DOCKER_IMAGE}
-          '''
+          for (service in services) {
+            dir(service) {
+              // Update Dockerfile CMD to run correct js file
+              sh """
+                sed -i 's/^CMD.*/CMD ["node", "${service}.js"]/' Dockerfile
+                docker build --no-cache -t ${DOCKER_REGISTRY}/${service}:latest .
+                docker push ${DOCKER_REGISTRY}/${service}:latest
+              """
+            }
+          }
         }
       }
     }
 
     stage('Deploy to Kubernetes') {
       steps {
-        withKubeCredentials(kubectlCredentials: [[
-          caCertificate: '',
-          clusterName: "${K8S_CLUSTER_NAME}",
-          contextName: '',
-          credentialsId: "${K8S_CREDENTIALS_ID}",
-          namespace: "${K8S_NAMESPACE}",
-          serverUrl: "${K8S_API_SERVER}"
-        ]]) {
-          sh "kubectl apply -f deployment-service.yml -n ${K8S_NAMESPACE}"
+        // Apply Kubernetes manifests and rollout restart deployments
+        sh "kubectl apply -f deployment-service.yml -n ${K8S_NAMESPACE}"
+
+        script {
+          def services = [
+            'adservice',
+            'checkoutservice',
+            'currencyservice',
+            'cartservice',
+            'emailservice',
+            'frontend',
+            'paymentservice',
+            'productcatalogservice',
+            'recommendationservice',
+            'shippingservice'
+          ]
+          for (service in services) {
+            sh "kubectl rollout restart deployment ${service} -n ${K8S_NAMESPACE}"
+          }
         }
       }
     }
 
     stage('Verify Deployment') {
       steps {
-        withKubeCredentials(kubectlCredentials: [[
-          caCertificate: '',
-          clusterName: "${K8S_CLUSTER_NAME}",
-          contextName: '',
-          credentialsId: "${K8S_CREDENTIALS_ID}",
-          namespace: "${K8S_NAMESPACE}",
-          serverUrl: "${K8S_API_SERVER}"
-        ]]) {
-          sh "kubectl get pods -n ${K8S_NAMESPACE}"
-          sh "kubectl get svc -n ${K8S_NAMESPACE}"
-        }
+        sh "kubectl get pods -n ${K8S_NAMESPACE}"
       }
     }
   }
