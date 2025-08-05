@@ -31,7 +31,7 @@ pipeline {
 
     stage('Deploy to Kubernetes') {
       steps {
-        withKubeConfig(credentialsId: 'kubeconfig-cred') {
+        withKubeConfig(credentialsId: 'k8-token') {
           sh 'kubectl apply -f deployment-service.yml -n webapps'
         }
       }
@@ -39,7 +39,7 @@ pipeline {
 
     stage('Verify Deployment') {
       steps {
-        withKubeConfig(credentialsId: 'kubeconfig-cred') {
+        withKubeConfig(credentialsId: 'k8-token') {
           sh 'kubectl get pods -n webapps'
           sh 'kubectl get svc -n webapps'
         }
